@@ -7,6 +7,8 @@ verify_ssl = true
 
 [packages]
 requests = "*"
+Pillow = "*"
+colorcet = "*"
 
 [requires]
 python_version = "3.11"
