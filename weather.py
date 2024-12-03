@@ -1,4 +1,5 @@
 import requests
+import colorcet as cc
 
 
 def get_weather(api_key, zip):
