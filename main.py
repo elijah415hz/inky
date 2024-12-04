@@ -7,8 +7,12 @@ from image import get_color_from_gradient, make_image
 
 home_address = os.getenv("HOME_ADDRESS") or ""
 met_address = os.getenv("MET_ADDRESS") or ""
+school_address = os.getenv("SCHOOL_ADDRESS") or ""
 
-travel_time = f"Time to Misshattan: {get_time_to_destination(home_address, met_address)}"
+travel_time = f"""
+Time to Misshattan: {get_time_to_destination(home_address, met_address)}
+Time to School: {get_time_to_destination(home_address, school_address)}
+"""
 
 api_key = os.getenv("OPEN_WEATHER_API_KEY")
 zip = os.getenv("WEATHER_ZIP")
