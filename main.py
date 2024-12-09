@@ -1,23 +1,18 @@
-import os
-import colorcet as cc
+from pages.basePage import BasePage
+from pages.weatherTravelPage import WeatherTravelPage
 
-from routes import get_time_to_destination
-from weather import get_weather
-from image import get_color_from_gradient, make_image
 
-home_address = os.getenv("HOME_ADDRESS") or ""
-met_address = os.getenv("MET_ADDRESS") or ""
-school_address = os.getenv("SCHOOL_ADDRESS") or ""
+class main():
 
-travel_time = f"""
-Time to Misshattan: {get_time_to_destination(home_address, met_address)}
-Time to School: {get_time_to_destination(home_address, school_address)}
-"""
+    page: BasePage = WeatherTravelPage()
 
-api_key = os.getenv("OPEN_WEATHER_API_KEY")
-zip = os.getenv("WEATHER_ZIP")
-weather = get_weather(api_key, zip)
+    def __init__(self):
+        self.page.load_page()
+        self.start_refresh_page()
 
-weather_str = f"Temperature: {weather['temp']}°F\nWeather: {weather['weather']}\nMax Temp: {weather['temp_max']}°F\nMin Temp: {weather['temp_min']}°F"
+    def start_refresh_page(self):
+        for image in self.page.start_refresh():
+            image.show()
 
-make_image(f"{travel_time}\n\n\n\n{weather_str}", get_color_from_gradient(int(weather["temp"]), 0, 115, cc.m_coolwarm))
+if __name__ == "__main__":
+    main()
