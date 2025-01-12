@@ -6,12 +6,12 @@ def make_image(text: str, bg_color=(0, 0, 0, 255), text_color=(255, 255, 255, 25
     image = Image.new("RGBA", [600, 448], bg_color)
 
     # get a font
-    fnt = ImageFont.truetype("JosefinSans-Bold.ttf", 40)
+    # fnt = ImageFont.truetype("JosefinSans-Bold.ttf", 40)
     # get a drawing context
     d = ImageDraw.Draw(image)
 
     # draw text
-    d.text((10, 20), text, font=fnt, fill=text_color)
+    d.text((10, 20), text, fill=text_color)
     # draw a line
     d.line((0, 70, image.size[0], 70), fill=text_color, width=7)
 

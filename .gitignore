@@ -163,3 +163,7 @@ cython_debug/
 
 
 weather_image.png
+.env.*
+bin
+weather_image.png
+pyenv.cfg

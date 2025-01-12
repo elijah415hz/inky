@@ -4,7 +4,7 @@ import colorcet as cc
 
 def get_weather(api_key, zip):
     url = f"http://api.openweathermap.org/geo/1.0/zip?zip={zip}&appid={api_key}"
-    print(url)
+    # print(url)
     response = requests.get(url)
     res = response.json()
     print(res)

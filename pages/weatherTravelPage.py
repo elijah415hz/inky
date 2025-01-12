@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime
 from pages.basePage import BasePage
 from PIL import Image, ImageDraw, ImageFont
 from image import get_color_from_gradient
@@ -13,7 +14,7 @@ met_address = os.getenv("MET_ADDRESS") or ""
 school_address = os.getenv("SCHOOL_ADDRESS") or ""
 
 class WeatherTravelPage(BasePage):
-    refresh_rate = 60
+    refresh_rate = 360
 
     def load_page(self):
         # Load the page
@@ -43,7 +44,7 @@ Time to School: {get_time_to_destination(home_address, school_address)}
         zip = os.getenv("WEATHER_ZIP")
         weather = get_weather(api_key, zip)
 
-        weather_str = f"Weather: {weather['weather']}\nTemperature: {weather['temp']}°F\nMin Temp: {weather['temp_min']}°F\nMax Temp: {weather['temp_max']}°F"
+        weather_str = f"Weather: {weather['weather']}\nTemperature: {round(weather['temp'])}°F\nMin Temp: {round(weather['temp_min'])}°F\nMax Temp: {round(weather['temp_max'])}°F"
 
         text = f"{travel_time}\n\n\n\n{weather_str}"
 
@@ -56,12 +57,18 @@ Time to School: {get_time_to_destination(home_address, school_address)}
         d = ImageDraw.Draw(image)
 
         # draw text
-        text_color=(255, 255, 255, 255)
-        d.text((10, 10), text, font=fnt, fill=text_color)
+        text_color=(0, 0, 0, 255)
+        d.text((10, 40), text, font=fnt,  fill=text_color)
         # draw a line
-        d.line((0, 140, image.size[0], 140), fill=text_color, width=7)
+        d.line((0, 180, image.size[0], 180), fill=text_color, width=7)
 
         weather_img = Image.open('weather_image.png', 'r')
-        image.paste(weather_img, (10, 140), mask=weather_img)
+        image.paste(weather_img, (10, 180), mask=weather_img)
+
+        # Add refresh time
+        now = datetime.now()
+        timeStr = now.strftime("%-I:%M %p")
+        fnt = ImageFont.truetype("JosefinSans-Bold.ttf", 20)
+        d.text((515, 418), timeStr, font=fnt, fill=text_color)
 
         return image

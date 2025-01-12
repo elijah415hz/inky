@@ -8,7 +8,7 @@ def get_time_to_destination(origin: str, destination: str) -> str:
 
     routesApiURL = 'https://routes.googleapis.com/directions/v2:computeRoutes'
 
-    print(f"Getting time from", {origin}, "to", {destination})
+    # print(f"Getting time from", {origin}, "to", {destination})
 
     body = {
     "origin":{
