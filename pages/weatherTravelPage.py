@@ -13,6 +13,8 @@ home_address = os.getenv("HOME_ADDRESS") or ""
 met_address = os.getenv("MET_ADDRESS") or ""
 school_address = os.getenv("SCHOOL_ADDRESS") or ""
 
+round_if_float = lambda x: round(x) if isinstance(x, float) else x
+
 class WeatherTravelPage(BasePage):
     refresh_rate = 360
 
@@ -44,7 +46,7 @@ Time to School: {get_time_to_destination(home_address, school_address)}
         zip = os.getenv("WEATHER_ZIP")
         weather = get_weather(api_key, zip)
 
-        weather_str = f"Weather: {weather['weather']}\nTemperature: {round(weather['temp'])}°F\nMin Temp: {round(weather['temp_min'])}°F\nMax Temp: {round(weather['temp_max'])}°F"
+        weather_str = f"Weather: {weather['weather']}\nTemperature: {round_if_float(weather['temp'])}°F\nMin Temp: {round_if_float(weather['temp_min'])}°F\nMax Temp: {round_if_float(weather['temp_max'])}°F"
 
         text = f"{travel_time}\n\n\n\n{weather_str}"
 
