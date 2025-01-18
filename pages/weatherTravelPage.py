@@ -38,8 +38,8 @@ class WeatherTravelPage(BasePage):
         school_address = os.getenv("SCHOOL_ADDRESS") or ""
 
         travel_time = f"""
-Time to Misshattan: {get_time_to_destination(home_address, met_address)}
-Time to School: {get_time_to_destination(home_address, school_address)}
+Misshattan: {get_time_to_destination(home_address, met_address)}
+School: {get_time_to_destination(home_address, school_address)}
 """
 
         api_key = os.getenv("OPEN_WEATHER_API_KEY")
@@ -52,11 +52,12 @@ Time to School: {get_time_to_destination(home_address, school_address)}
                 j = i
                 found = False
                 while found == False:
-                    if weatherDescription[j] == " ":
+                    if weatherDescription[j].isspace():
                         found = True
+                        j += 1 # Get in front of the space to leave it on upper line
                         weatherDescription = weatherDescription[:j] + "\n" + weatherDescription[j:]
-                    j -= j
-        weather_str = f"{weatherDescription}\nTemperature: {round_if_float(weather['temp'])}°F\nMin Temp: {round_if_float(weather['temp_min'])}°F\nMax Temp: {round_if_float(weather['temp_max'])}°F"
+                    j -= 1
+        weather_str = f"{weatherDescription}\n\nTemperature: {round_if_float(weather['temp'])}°F\nMin Temp: {round_if_float(weather['temp_min'])}°F\nMax Temp: {round_if_float(weather['temp_max'])}°F"
 
         text = f"{travel_time}\n\n{weather_str}"
 
@@ -78,7 +79,7 @@ Time to School: {get_time_to_destination(home_address, school_address)}
         d.line((0, 180, image.size[0], 180), fill=text_color, width=7)
 
         weather_img = Image.open('weather_image.png', 'r')
-        image.paste(weather_img, (515, 250), mask=weather_img)
+        image.paste(weather_img, (515, 280), mask=weather_img)
 
         # Add refresh time
         now = datetime.now()
