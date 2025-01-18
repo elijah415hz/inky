@@ -79,7 +79,7 @@ School: {get_time_to_destination(home_address, school_address)}
         d.line((0, 180, image.size[0], 180), fill=text_color, width=7)
 
         weather_img = Image.open('weather_image.png', 'r')
-        image.paste(weather_img, (515, 280), mask=weather_img)
+        image.paste(weather_img, (505, 320), mask=weather_img)
 
         # Add refresh time
         now = datetime.now()
