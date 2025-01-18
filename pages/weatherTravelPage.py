@@ -49,8 +49,13 @@ Time to School: {get_time_to_destination(home_address, school_address)}
         weatherDescription = str(weather['weather'])
         for i in range(len(weatherDescription)):
             if i % 25 == 0 and i != 0:
-                weatherDescription = weatherDescription[:i] + "\n" + weatherDescription[i:]
-                
+                j = i
+                found = False
+                while found == False:
+                    if weatherDescription[j] == " ":
+                        found = True
+                        weatherDescription = weatherDescription[:j] + "\n" + weatherDescription[j:]
+                    j -= j
         weather_str = f"{weatherDescription}\nTemperature: {round_if_float(weather['temp'])}°F\nMin Temp: {round_if_float(weather['temp_min'])}°F\nMax Temp: {round_if_float(weather['temp_max'])}°F"
 
         text = f"{travel_time}\n\n{weather_str}"
@@ -73,7 +78,7 @@ Time to School: {get_time_to_destination(home_address, school_address)}
         d.line((0, 180, image.size[0], 180), fill=text_color, width=7)
 
         weather_img = Image.open('weather_image.png', 'r')
-        image.paste(weather_img, (515, 200), mask=weather_img)
+        image.paste(weather_img, (515, 250), mask=weather_img)
 
         # Add refresh time
         now = datetime.now()
