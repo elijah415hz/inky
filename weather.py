@@ -8,7 +8,7 @@ def get_weather(api_key, zip) -> dict[str, float | str]:
     response = requests.get(url)
     res = response.json()
     print(res)
-    url = f"http://api.openweathermap.org/data/2.5/onecall?lat={res['lat']}&lon={res['lon']}&units=imperial&appid={api_key}"
+    url = f"http://api.openweathermap.org/data/3.0/onecall?lat={res['lat']}&lon={res['lon']}&exclude=hourly&units=imperial&appid={api_key}"
     response = requests.get(url)
     if response.status_code == 200:
         res = response.json()
@@ -16,8 +16,8 @@ def get_weather(api_key, zip) -> dict[str, float | str]:
         daily = res['daily'][0]
         temp = current['temp']
         weather = daily['summary']
-        temp_max = daily['max']
-        temp_min = daily['min']
+        temp_max = daily['temp']['max']
+        temp_min = daily['temp']['min']
         feels_like = current['feels_like']
 
         img_data = requests.get(f"http://openweathermap.org/img/wn/{current['weather'][0]['icon']}@2x.png").content
