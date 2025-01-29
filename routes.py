@@ -18,7 +18,7 @@ def get_time_to_destination(origin: str, destination: str) -> str:
         "address": destination
     },
     "travelMode": "DRIVE",
-    "routingPreference": "TRAFFIC_AWARE",
+    "routingPreference": "TRAFFIC_AWARE_OPTIMAL",
     "computeAlternativeRoutes": False,
     "routeModifiers": {
         "avoidTolls": False,
