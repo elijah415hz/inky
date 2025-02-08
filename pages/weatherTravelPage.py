@@ -62,7 +62,7 @@ School: {get_time_to_destination(home_address, school_address)}
                         j += 1 # Get in front of the space to leave it on upper line
                         weatherDescription = weatherDescription[:j] + "\n" + weatherDescription[j:]
                     j -= 1
-        weather_str = f"{weatherDescription}\n\nTemperature: {round_if_float(weather['temp'])}°F/{to_celcius(weather['temp'])}°C\nLo: {round_if_float(weather['temp_min'])}°F/{to_celcius(weather['temp_min'])}°C - Hi: {round_if_float(weather['temp_max'])}°F/{to_celcius(weather['temp_max'])}"
+        weather_str = f"{weatherDescription}\n\nTemperature: {round_if_float(weather['temp'])}°F/{to_celcius(weather['temp'])}°C\nLo: {round_if_float(weather['temp_min'])}°F/{to_celcius(weather['temp_min'])}°C - Hi: {round_if_float(weather['temp_max'])}°F/{to_celcius(weather['temp_max'])}°C"
 
         text = f"{travel_time}\n{weather_str}"
 
