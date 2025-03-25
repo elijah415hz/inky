@@ -4,6 +4,8 @@ import os
 
 def get_time_to_destination(origin: str, destination: str) -> str:
 
+    return "Not available"
+    
     APIKey = os.getenv('GOOGLE_MAPS_API_KEY')
 
     routesApiURL = 'https://routes.googleapis.com/directions/v2:computeRoutes'
