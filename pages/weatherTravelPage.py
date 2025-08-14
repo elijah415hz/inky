@@ -4,14 +4,10 @@ from datetime import datetime
 from pages.basePage import BasePage
 from PIL import Image, ImageDraw, ImageFont
 from image import get_color_from_gradient
-from routes import get_time_to_destination
+from ferries import get_kingston_edmonds_sailing_times, get_kingston_wait_time
 from weather import get_weather
 import colorcet as cc
 
-
-home_address = os.getenv("HOME_ADDRESS") or ""
-met_address = os.getenv("MET_ADDRESS") or ""
-school_address = os.getenv("SCHOOL_ADDRESS") or ""
 
 round_if_float = lambda x: round(x) if isinstance(x, float) else x
 
@@ -38,14 +34,14 @@ class WeatherTravelPage(BasePage):
             time.sleep(self.refresh_rate)
 
     def make_image(self):
-        home_address = os.getenv("HOME_ADDRESS") or ""
-        met_address = os.getenv("MET_ADDRESS") or ""
-        school_address = os.getenv("SCHOOL_ADDRESS") or ""
-
-        travel_time = f"""
-Misshattan: {get_time_to_destination(home_address, met_address)}
-School: {get_time_to_destination(home_address, school_address)}
-"""
+        # Get ferry sailing times and wait time guidance
+        try:
+            api_key = os.getenv("WSDOT_API_ACCESS_CODE")
+            ferry_times = get_kingston_edmonds_sailing_times(api_key)
+            wait_guidance = get_kingston_wait_time(api_key)
+            ferry_info = f"Ferry (Kingston → Edmonds):\nNext sailings: {ferry_times}\nGuidance: {wait_guidance}"
+        except Exception as e:
+            ferry_info = f"Ferry info unavailable: {str(e)}"
 
         api_key = os.getenv("OPEN_WEATHER_API_KEY")
         zip = os.getenv("WEATHER_ZIP")
@@ -64,7 +60,7 @@ School: {get_time_to_destination(home_address, school_address)}
                     j -= 1
         weather_str = f"{weatherDescription}\n\nTemperature: {round_if_float(weather['temp'])}°F/{to_celcius(weather['temp'])}°C\nLo: {round_if_float(weather['temp_min'])}°F/{to_celcius(weather['temp_min'])}°C - Hi: {round_if_float(weather['temp_max'])}°F/{to_celcius(weather['temp_max'])}°C"
 
-        text = f"{travel_time}\n{weather_str}"
+        text = f"{ferry_info}\n\n{weather_str}"
 
         if weather["temp"] == "??":
             weather['temp'] = 0
