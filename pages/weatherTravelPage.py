@@ -6,6 +6,7 @@ from PIL import Image, ImageDraw, ImageFont
 from image import get_color_from_gradient
 from ferries import get_kingston_edmonds_sailing_times, get_kingston_wait_time
 from weather import get_weather
+from temperature_sensor import get_inside_temperature
 import colorcet as cc
 
 
@@ -43,6 +44,13 @@ class WeatherTravelPage(BasePage):
         except Exception as e:
             ferry_info = f"Ferry info unavailable: {str(e)}"
 
+        # Get inside temperature from sensor
+        inside_temp = get_inside_temperature()
+        if inside_temp is not None:
+            inside_temp_str = f"Inside Temp: {round_if_float(inside_temp)}°F/{to_celcius(inside_temp)}°C"
+        else:
+            inside_temp_str = "Inside Temp: Unavailable"
+
         api_key = os.getenv("OPEN_WEATHER_API_KEY")
         zip = os.getenv("WEATHER_ZIP")
         weather = get_weather(api_key, zip)
@@ -60,7 +68,7 @@ class WeatherTravelPage(BasePage):
                     j -= 1
         weather_str = f"{weatherDescription}\n\nTemperature: {round_if_float(weather['temp'])}°F/{to_celcius(weather['temp'])}°C\nLo: {round_if_float(weather['temp_min'])}°F/{to_celcius(weather['temp_min'])}°C - Hi: {round_if_float(weather['temp_max'])}°F/{to_celcius(weather['temp_max'])}°C"
 
-        text = f"{ferry_info}\n\n{weather_str}"
+        text = f"{ferry_info}\n\n{weather_str}\n\n{inside_temp_str}"
 
         if weather["temp"] == "??":
             weather['temp'] = 0
