@@ -47,7 +47,7 @@ class WeatherTravelPage(BasePage):
         # Get inside temperature from sensor
         inside_temp = get_inside_temperature()
         if inside_temp is not None:
-            inside_temp_str = f"Inside Temp: {round_if_float(inside_temp)}°F/{to_celcius(inside_temp)}°C"
+            inside_temp_str = f"Inside Temp: {round_if_float(inside_temp)}°F"
         else:
             inside_temp_str = "Inside Temp: Unavailable"
 
@@ -66,9 +66,9 @@ class WeatherTravelPage(BasePage):
                         j += 1 # Get in front of the space to leave it on upper line
                         weatherDescription = weatherDescription[:j] + "\n" + weatherDescription[j:]
                     j -= 1
-        weather_str = f"{weatherDescription}\n\nTemperature: {round_if_float(weather['temp'])}°F/{to_celcius(weather['temp'])}°C\nLo: {round_if_float(weather['temp_min'])}°F/{to_celcius(weather['temp_min'])}°C - Hi: {round_if_float(weather['temp_max'])}°F/{to_celcius(weather['temp_max'])}°C"
+        weather_str = f"{weatherDescription}\n\nTemperature: {round_if_float(weather['temp'])}°F\nLo: {round_if_float(weather['temp_min'])}°F - Hi: {round_if_float(weather['temp_max'])}°F"
 
-        text = f"{ferry_info}\n\n{weather_str}\n\n{inside_temp_str}"
+        text = f"{ferry_info}\n{weather_str}\n{inside_temp_str}"
 
         if weather["temp"] == "??":
             weather['temp'] = 0
