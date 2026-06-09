@@ -1,11 +1,11 @@
 from pages.basePage import BasePage
-from pages.weatherTravelPage import WeatherTravelPage
+from pages.tidePage import TidePage
 import inky.auto as auto
 
 
 class main():
 
-    page: BasePage = WeatherTravelPage()
+    page: BasePage = TidePage()
 
     def __init__(self):
         self.display = auto()
