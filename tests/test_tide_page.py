@@ -70,3 +70,12 @@ def test_make_image_fallback_on_fetch_error(monkeypatch):
 def test_render_fallback_directly():
     img = TidePage()._render_fallback("Tide data unavailable")
     assert img.size == (WIDTH, HEIGHT)
+
+
+def test_make_image_uses_red_now_line_and_blue_curve(monkeypatch):
+    monkeypatch.setattr(tp, "fetch_tide_extremes", lambda *a, **k: _fake_window_extremes())
+    img = TidePage().make_image().convert("RGB")
+    colors = {color for _, color in img.getcolors(WIDTH * HEIGHT)}
+    assert (255, 0, 0) in colors      # red "now" accent is drawn
+    assert (0, 0, 255) in colors      # blue tide curve is drawn
+    assert (0, 160, 0) not in colors  # old green now-line is gone

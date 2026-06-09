@@ -27,13 +27,20 @@ CURVE_SAMPLES = 240
 WHITE = (255, 255, 255, 255)
 BLACK = (0, 0, 0, 255)
 BLUE = (0, 0, 255, 255)
-GREEN = (0, 160, 0, 255)
+RED = (255, 0, 0, 255)
 
 TITLE_FONT_SIZE = 34
+DATE_FONT_SIZE = 20
 LABEL_FONT_SIZE = 18
+NOW_LABEL_FONT_SIZE = 13
 FALLBACK_FONT_SIZE = 34
-MARKER_HALF = 4
+
+CURVE_WIDTH = 3
+MARKER_RADIUS = 3
 LABEL_GAP = 6
+TITLE_UNDERLINE_RIGHT = 220  # short editorial underline ends here (px from left)
+NOW_DASH = 7                 # dash length on the "now" line (px)
+NOW_GAP = 5                  # gap between "now" dashes (px)
 
 _FONT_PATH = "JosefinSans-Bold.ttf"
 
@@ -89,11 +96,13 @@ class TidePage(BasePage):
         curve = sample_curve(extremes, window_start, window_end, CURVE_SAMPLES)
         pts = [(time_to_x(t, window_start, window_end), height_to_y(v)) for t, v in curve]
         if len(pts) >= 2:
-            d.line(pts, fill=BLUE, width=4, joint="curve")
+            d.line(pts, fill=BLUE, width=CURVE_WIDTH, joint="curve")
 
-        # "Now" vertical line (centered)
+        # "Now" vertical line (centered) — thin red dashed accent with a small label
         x_now = time_to_x(now, window_start, window_end)
-        d.line((x_now, CHART_TOP, x_now, CHART_BOTTOM), fill=GREEN, width=3)
+        self._dashed_vline(d, x_now, CHART_TOP, CHART_BOTTOM, RED)
+        now_fnt = ImageFont.truetype(_FONT_PATH, NOW_LABEL_FONT_SIZE)
+        d.text((x_now + 5, CHART_TOP - 4), "now", font=now_fnt, fill=RED)
 
         # H/L markers + labels (only those inside the visible window)
         label_fnt = ImageFont.truetype(_FONT_PATH, LABEL_FONT_SIZE)
@@ -104,19 +113,28 @@ class TidePage(BasePage):
 
         return image
 
+    def _dashed_vline(self, d, x, y0, y1, color) -> None:
+        y = y0
+        while y < y1:
+            d.line((x, y, x, min(y + NOW_DASH, y1)), fill=color, width=2)
+            y += NOW_DASH + NOW_GAP
+
     def _draw_header(self, d: ImageDraw.ImageDraw, now: datetime) -> None:
         title_fnt = ImageFont.truetype(_FONT_PATH, TITLE_FONT_SIZE)
+        date_fnt = ImageFont.truetype(_FONT_PATH, DATE_FONT_SIZE)
         d.text((MARGIN_X, 12), STATION_NAME, font=title_fnt, fill=BLACK)
         date_str = now.strftime("%a %b %-d")
-        w = d.textlength(date_str, font=title_fnt)
-        d.text((WIDTH - MARGIN_X - w, 12), date_str, font=title_fnt, fill=BLACK)
-        d.line((0, TITLE_RULE_Y, WIDTH, TITLE_RULE_Y), fill=BLACK, width=4)
+        w = d.textlength(date_str, font=date_fnt)
+        # smaller date sits lower so it reads as a subtitle aligned to the title
+        d.text((WIDTH - MARGIN_X - w, 26), date_str, font=date_fnt, fill=BLACK)
+        # short editorial underline beneath the title only (not a full-width slab)
+        d.line((MARGIN_X, TITLE_RULE_Y, TITLE_UNDERLINE_RIGHT, TITLE_RULE_Y), fill=BLACK, width=3)
 
     def _draw_marker(self, d, ex, window_start, window_end, fnt) -> None:
         x = time_to_x(ex.time, window_start, window_end)
         y = height_to_y(ex.value)
-        d.rectangle(
-            [x - MARKER_HALF, y - MARKER_HALF, x + MARKER_HALF, y + MARKER_HALF],
+        d.ellipse(
+            [x - MARKER_RADIUS, y - MARKER_RADIUS, x + MARKER_RADIUS, y + MARKER_RADIUS],
             fill=BLACK,
         )
         value_str = f"{ex.value:.1f}"
@@ -128,9 +146,9 @@ class TidePage(BasePage):
 
         # Place above highs, below lows
         if ex.kind == "H":
-            top = y - MARKER_HALF - LABEL_GAP - 2 * line_h
+            top = y - MARKER_RADIUS - LABEL_GAP - 2 * line_h
         else:
-            top = y + MARKER_HALF + LABEL_GAP
+            top = y + MARKER_RADIUS + LABEL_GAP
 
         # Horizontal anchor with edge-nudge so labels never clip
         left = x - block_w / 2
