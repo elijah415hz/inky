@@ -1,0 +1,7 @@
+# Laptop/off-device development dependencies.
+# Install into a venv, then run `python preview.py` or `pytest`.
+# NOTE: this intentionally OMITS the Pi-only runtime packages in the Pipfile
+# (inky, adafruit-*) which do not build on macOS. Render-only deps:
+pillow
+requests
+pytest
