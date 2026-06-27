@@ -131,3 +131,30 @@ def test_sample_curve_drops_points_outside_coverage():
     pts = sample_curve(ex, start, end, 18)
     assert all(t >= ex[0].time for t, _ in pts)
     assert len(pts) < 19
+
+
+from datetime import date, timezone
+from tides import sun_times
+
+# Mystery Bay, Marrowstone Island WA
+_LAT, _LON = 48.063, -122.690
+
+
+def test_sun_times_summer_solstice_matches_known_pacific_times():
+    sunrise, sunset = sun_times(date(2026, 6, 20), _LAT, _LON)
+    pdt = timezone(timedelta(hours=-7))
+    # Port Townsend area solstice: sunrise ~5:11a, sunset ~9:15p PDT
+    assert sunrise.astimezone(pdt).strftime("%H:%M") == "05:11"
+    assert sunset.astimezone(pdt).strftime("%H:%M") == "21:15"
+
+
+def test_sun_times_returns_utc_and_sunrise_before_sunset():
+    sunrise, sunset = sun_times(date(2026, 12, 21), _LAT, _LON)
+    assert sunrise.tzinfo == timezone.utc
+    assert sunset.tzinfo == timezone.utc
+    assert sunrise < sunset
+
+
+def test_sun_times_polar_night_returns_none():
+    # Above the Arctic Circle in midwinter the sun never rises.
+    assert sun_times(date(2026, 12, 21), 78.0, 15.0) == (None, None)

@@ -3,10 +3,12 @@ from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 
 from pages.basePage import BasePage
-from tides import fetch_tide_extremes, sample_curve
+from tides import fetch_tide_extremes, sample_curve, sun_times
 
 STATION_ID = "9444971"
 STATION_NAME = "Mystery Bay"
+STATION_LAT = 48.063   # Mystery Bay, Marrowstone Island WA
+STATION_LON = -122.690  # east-positive longitude
 
 SCALE_MIN_FT = -4.0
 SCALE_MAX_FT = 10.0
@@ -20,24 +22,32 @@ MARGIN_X = 12
 TITLE_RULE_Y = 60
 CHART_LEFT = 12
 CHART_RIGHT = 588
-CHART_TOP = 95
-CHART_BOTTOM = 395
+CHART_TOP = 122
+CHART_BOTTOM = 391
 CURVE_SAMPLES = 240
 
 WHITE = (255, 255, 255, 255)
 BLACK = (0, 0, 0, 255)
 BLUE = (0, 0, 255, 255)
 RED = (255, 0, 0, 255)
+NIGHT_FILL = (200, 200, 200, 255)  # gray band over hours between sunset and sunrise
 
 TITLE_FONT_SIZE = 34
 DATE_FONT_SIZE = 20
-LABEL_FONT_SIZE = 18
+LABEL_FONT_SIZE = 22
 NOW_LABEL_FONT_SIZE = 13
 FALLBACK_FONT_SIZE = 34
 
 CURVE_WIDTH = 3
 MARKER_RADIUS = 3
 LABEL_GAP = 6
+LABEL_LINE_H = LABEL_FONT_SIZE + 2
+# Vertical room a 2-line marker label occupies beyond its dot (height + time)
+LABEL_BLOCK_H = MARKER_RADIUS + LABEL_GAP + 2 * LABEL_LINE_H
+# Night bars span the full extent any label can reach: from above the highest
+# high-label down to the bottom edge of the canvas (below the lowest low-label).
+NIGHT_TOP = CHART_TOP - LABEL_BLOCK_H
+NIGHT_BOTTOM = HEIGHT
 TITLE_UNDERLINE_RIGHT = 220  # short editorial underline ends here (px from left)
 NOW_DASH = 7                 # dash length on the "now" line (px)
 NOW_GAP = 5                  # gap between "now" dashes (px)
@@ -92,6 +102,9 @@ class TidePage(BasePage):
         window_start = now - timedelta(hours=WINDOW_HOURS)
         window_end = now + timedelta(hours=WINDOW_HOURS)
 
+        # Night shading (drawn first so the curve and labels render on top)
+        self._draw_night_shading(d, window_start, window_end)
+
         # Curve
         curve = sample_curve(extremes, window_start, window_end, CURVE_SAMPLES)
         pts = [(time_to_x(t, window_start, window_end), height_to_y(v)) for t, v in curve]
@@ -119,6 +132,38 @@ class TidePage(BasePage):
             d.line((x, y, x, min(y + NOW_DASH, y1)), fill=color, width=2)
             y += NOW_DASH + NOW_GAP
 
+    def _night_spans(self, window_start, window_end):
+        """Dark (sunset->sunrise) intervals overlapping the visible window.
+
+        Sun times are computed in UTC, then converted to the device's local
+        time so they line up with the device-clock "now" line and the
+        station-local tide curve.
+        """
+        spans = []
+        day = (window_start - timedelta(days=1)).date()
+        last = window_end.date()
+        while day <= last:
+            _, sunset = sun_times(day, STATION_LAT, STATION_LON)
+            sunrise_next, _ = sun_times(day + timedelta(days=1), STATION_LAT, STATION_LON)
+            if sunset is None or sunrise_next is None:
+                day += timedelta(days=1)
+                continue
+            start = sunset.astimezone().replace(tzinfo=None)
+            end = sunrise_next.astimezone().replace(tzinfo=None)
+            # clip to the visible window
+            start = max(start, window_start)
+            end = min(end, window_end)
+            if start < end:
+                spans.append((start, end))
+            day += timedelta(days=1)
+        return spans
+
+    def _draw_night_shading(self, d, window_start, window_end) -> None:
+        for start, end in self._night_spans(window_start, window_end):
+            x0 = time_to_x(start, window_start, window_end)
+            x1 = time_to_x(end, window_start, window_end)
+            d.rectangle([x0, NIGHT_TOP, x1, NIGHT_BOTTOM], fill=NIGHT_FILL)
+
     def _draw_header(self, d: ImageDraw.ImageDraw, now: datetime) -> None:
         title_fnt = ImageFont.truetype(_FONT_PATH, TITLE_FONT_SIZE)
         date_fnt = ImageFont.truetype(_FONT_PATH, DATE_FONT_SIZE)
@@ -139,7 +184,7 @@ class TidePage(BasePage):
         )
         value_str = f"{ex.value:.1f}"
         time_str = format_compact_time(ex.time)
-        line_h = LABEL_FONT_SIZE + 2
+        line_h = LABEL_LINE_H
         vw = d.textlength(value_str, font=fnt)
         tw = d.textlength(time_str, font=fnt)
         block_w = max(vw, tw)
