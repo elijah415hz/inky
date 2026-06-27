@@ -1,5 +1,4 @@
 import os
-import time
 from datetime import datetime
 from pages.basePage import BasePage
 from PIL import Image, ImageDraw, ImageFont
@@ -21,18 +20,7 @@ class WeatherTravelPage(BasePage):
     refresh_rate = 360
 
     def load_page(self):
-        # Load the page
         self.page_active = True
-        self.start_refresh()
-
-    def unload_page(self):
-        self.page_active = False
-
-    def start_refresh(self):
-        while self.page_active:
-            image = self.make_image()
-            yield image
-            time.sleep(self.refresh_rate)
 
     def make_image(self):
         # Get ferry sailing times and wait time guidance

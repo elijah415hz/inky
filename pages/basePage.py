@@ -1,16 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Generator
 from PIL.Image import Image
 
+
 class BasePage(ABC):
-    pageActive = False
+    # Seconds between automatic re-renders while this page is shown.
+    # Subclasses override to taste.
+    refresh_rate: int = 900
+    page_active = False
 
     @abstractmethod
     def load_page(self):
-        pass
-
-    @abstractmethod
-    def start_refresh(self) -> Generator[Image, None, None]:
         pass
 
     @abstractmethod
@@ -18,4 +17,4 @@ class BasePage(ABC):
         pass
 
     def unload_page(self):
-        self.pageActive = False
+        self.page_active = False

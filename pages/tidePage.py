@@ -1,4 +1,3 @@
-import time
 from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 
@@ -74,14 +73,6 @@ class TidePage(BasePage):
 
     def load_page(self):
         self.page_active = True
-
-    def unload_page(self):
-        self.page_active = False
-
-    def start_refresh(self):
-        while self.page_active:
-            yield self.make_image()
-            time.sleep(self.refresh_rate)
 
     def make_image(self) -> Image.Image:
         now = datetime.now()
