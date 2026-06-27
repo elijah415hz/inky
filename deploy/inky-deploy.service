@@ -1,0 +1,8 @@
+[Unit]
+Description=Inky pull-based deploy check
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=__REPO_DIR__/deploy/deploy.sh

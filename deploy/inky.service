@@ -1,0 +1,14 @@
+[Unit]
+Description=Inky e-ink display app
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=__REPO_DIR__
+ExecStart=__REPO_DIR__/start.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

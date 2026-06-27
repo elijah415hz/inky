@@ -1,0 +1,11 @@
+[Unit]
+Description=Run inky deploy check every 2 minutes
+
+[Timer]
+# Fire shortly after boot, then every 2 minutes. Adjust to taste.
+OnBootSec=1min
+OnUnitActiveSec=2min
+AccuracySec=15s
+
+[Install]
+WantedBy=timers.target
