@@ -41,6 +41,19 @@ class PageController:
             self._requested_key = label
         self._wake.set()
 
+    def cycle(self) -> None:
+        """Advance to the next registered page in order, wrapping around.
+
+        For a button that isn't bound to a specific page: lets one button step
+        through every page. Steps from a pending request if one is queued, so
+        rapid presses advance through pages instead of toggling in place.
+        """
+        keys = list(self.pages)
+        with self._lock:
+            base = self._requested_key or self.current_key
+        nxt = keys[(keys.index(base) + 1) % len(keys)]
+        self.request(nxt)
+
     def _apply_request(self) -> None:
         with self._lock:
             requested = self._requested_key

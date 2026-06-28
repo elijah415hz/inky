@@ -77,6 +77,25 @@ def test_unknown_button_is_ignored():
     assert ctrl.current_key == "A"
 
 
+def test_cycle_advances_to_next_page_and_wraps():
+    ctrl, pages = make_controller()  # starts on A, pages A -> B
+    ctrl.cycle()
+    assert ctrl._wake.is_set()
+    ctrl._apply_request()
+    assert ctrl.current_key == "B"
+    ctrl.cycle()
+    ctrl._apply_request()
+    assert ctrl.current_key == "A"  # wrapped back around
+
+
+def test_cycle_steps_from_pending_request_on_rapid_presses():
+    ctrl, pages = make_controller()  # starts on A
+    ctrl.cycle()  # queues B
+    ctrl.cycle()  # steps past pending B -> wraps to A before any apply
+    ctrl._apply_request()
+    assert ctrl.current_key == "A"
+
+
 def test_render_once_draws_active_page_to_display():
     ctrl, pages = make_controller()
     display = FakeDisplay()

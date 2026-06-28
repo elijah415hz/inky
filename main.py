@@ -19,13 +19,14 @@ from pages.weatherTravelPage import WeatherTravelPage
 BUTTONS = [5, 6, 16, 24]
 LABELS = ["A", "B", "C", "D"]
 
-# Page bound to each button. Buttons without an entry (C, D) are ignored,
-# reserved for future pages.
+# Page bound to each button. A and B select their page directly; D cycles
+# through all pages (one button steps through everything). C is reserved.
 PAGES = {
     "A": TidePage(),
     "B": WeatherTravelPage(),
 }
 START_KEY = "A"
+CYCLE_LABEL = "D"
 
 
 def _watch_buttons(controller: PageController) -> None:
@@ -43,7 +44,11 @@ def _watch_buttons(controller: PageController) -> None:
     )
     while True:
         for event in request.read_edge_events():
-            controller.request(LABELS[offsets.index(event.line_offset)])
+            label = LABELS[offsets.index(event.line_offset)]
+            if label == CYCLE_LABEL:
+                controller.cycle()
+            else:
+                controller.request(label)
 
 
 def main() -> None:
