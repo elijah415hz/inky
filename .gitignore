@@ -167,3 +167,6 @@ weather_image.png
 bin
 weather_image.png
 pyenv.cfg
+
+# Cached last-good tide state, used to freeze the graph during an API outage
+tide_cache.json

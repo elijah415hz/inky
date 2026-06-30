@@ -1,8 +1,10 @@
+import json
+import os
 from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 
 from pages.basePage import BasePage
-from tides import fetch_tide_extremes, sample_curve, sun_times
+from tides import Extreme, fetch_tide_extremes, sample_curve, sun_times
 
 STATION_ID = "9444971"
 STATION_NAME = "Mystery Bay"
@@ -55,6 +57,12 @@ NOW_GAP = 5                  # gap between "now" dashes (px)
 
 _FONT_PATH = "JosefinSans-Bold.ttf"
 
+# Last good tide state is cached here so a frozen graph survives process
+# restarts (e.g. auto-deploy) during an API outage. Untracked, so a deploy's
+# `git reset --hard` leaves it intact. Resolved relative to the repo root so
+# it does not depend on the process's working directory.
+CACHE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tide_cache.json")
+
 
 def time_to_x(t: datetime, start: datetime, end: datetime) -> float:
     frac = (t - start).total_seconds() / (end - start).total_seconds()
@@ -73,27 +81,58 @@ def format_compact_time(t: datetime) -> str:
 class TidePage(BasePage):
     refresh_rate = REFRESH_RATE
 
+    def __init__(self):
+        # Last good data, plus the "now" at the moment it was fetched. The chart
+        # window is anchored to ``_anchor`` so a failed refresh leaves the curve,
+        # markers, and night shading pixel-stable while the now-line advances.
+        self._extremes: list[Extreme] | None = None
+        self._anchor: datetime | None = None
+        self._loaded = False
+
     def load_page(self):
         self.page_active = True
+        self._ensure_loaded()
 
-    def make_image(self) -> Image.Image:
-        now = datetime.now()
+    def make_image(self, now: datetime | None = None) -> Image.Image:
+        now = now or datetime.now()
+        self._ensure_loaded()
+        self._refresh(now)
+        if self._extremes is None or self._anchor is None:
+            # Cold start with no data ever fetched — nothing to freeze.
+            return self._render_fallback("Tide data unavailable")
+        return self._render(now, self._anchor, self._extremes)
+
+    def _refresh(self, now: datetime) -> None:
+        """Fetch fresh extremes; on any failure keep the last good state.
+
+        A successful, non-empty fetch re-anchors the window to ``now`` and
+        persists the new state. A failure (network/JSON/error payload/empty)
+        is logged and leaves ``_extremes``/``_anchor`` untouched so the prior
+        graph stays frozen.
+        """
         try:
             begin = (now - timedelta(days=2)).strftime("%Y%m%d")
             end = (now + timedelta(days=2)).strftime("%Y%m%d")
             extremes = fetch_tide_extremes(STATION_ID, begin, end)
-            if not extremes:
-                return self._render_fallback("Tide data unavailable")
-        except Exception as e:  # network/JSON/error payload -> fallback frame
+        except Exception as e:
             print(f"Tide fetch failed: {e}")
-            return self._render_fallback("Tide data unavailable")
+            return
+        if not extremes:
+            print("Tide fetch returned no predictions")
+            return
+        self._extremes = extremes
+        self._anchor = now
+        self._save_cache()
 
+    def _render(self, now: datetime, anchor: datetime, extremes: list[Extreme]) -> Image.Image:
         image = Image.new("RGBA", [WIDTH, HEIGHT], WHITE)
         d = ImageDraw.Draw(image)
         self._draw_header(d, now)
 
-        window_start = now - timedelta(hours=PAST_HOURS)
-        window_end = now + timedelta(hours=FUTURE_HOURS)
+        # Window is anchored to the last successful fetch, not the live clock,
+        # so the graph holds still during an outage and only the now-line moves.
+        window_start = anchor - timedelta(hours=PAST_HOURS)
+        window_end = anchor + timedelta(hours=FUTURE_HOURS)
 
         # Night shading (drawn first so the curve and labels render on top)
         self._draw_night_shading(d, window_start, window_end)
@@ -104,11 +143,9 @@ class TidePage(BasePage):
         if len(pts) >= 2:
             d.line(pts, fill=BLUE, width=CURVE_WIDTH, joint="curve")
 
-        # "Now" vertical line (1/4 from the left) — thin red dashed accent with a small label
-        x_now = time_to_x(now, window_start, window_end)
-        self._dashed_vline(d, x_now, CHART_TOP, CHART_BOTTOM, RED)
-        now_fnt = ImageFont.truetype(_FONT_PATH, NOW_LABEL_FONT_SIZE)
-        d.text((x_now + 5, CHART_TOP - 4), "now", font=now_fnt, fill=RED)
+        # "Now" line — advances to the live clock; pinned to the chart edges
+        # once it drifts past the frozen window during an outage.
+        self._draw_now_line(d, now, window_start, window_end)
 
         # H/L markers + labels (only those inside the visible window)
         label_fnt = ImageFont.truetype(_FONT_PATH, LABEL_FONT_SIZE)
@@ -118,6 +155,51 @@ class TidePage(BasePage):
             self._draw_marker(d, ex, window_start, window_end, label_fnt)
 
         return image
+
+    def _draw_now_line(self, d, now: datetime, window_start, window_end) -> None:
+        x_now = max(CHART_LEFT, min(time_to_x(now, window_start, window_end), CHART_RIGHT))
+        self._dashed_vline(d, x_now, CHART_TOP, CHART_BOTTOM, RED)
+        now_fnt = ImageFont.truetype(_FONT_PATH, NOW_LABEL_FONT_SIZE)
+        label_w = d.textlength("now", font=now_fnt)
+        # Label sits to the right of the line, flipping left near the edge so it
+        # never clips once the now-line is pinned to CHART_RIGHT.
+        lx = x_now + 5
+        if lx + label_w > CHART_RIGHT:
+            lx = x_now - 5 - label_w
+        d.text((lx, CHART_TOP - 4), "now", font=now_fnt, fill=RED)
+
+    def _ensure_loaded(self) -> None:
+        """Load the cached last-good state from disk once, lazily."""
+        if self._loaded:
+            return
+        self._loaded = True
+        try:
+            with open(CACHE_PATH) as f:
+                data = json.load(f)
+            anchor = datetime.fromisoformat(data["anchor"])
+            extremes = [
+                Extreme(datetime.fromisoformat(e["t"]), float(e["v"]), e["kind"])
+                for e in data["extremes"]
+            ]
+        except (OSError, ValueError, KeyError, TypeError):
+            return  # no cache, or unreadable — start cold
+        if extremes:
+            self._extremes = extremes
+            self._anchor = anchor
+
+    def _save_cache(self) -> None:
+        data = {
+            "anchor": self._anchor.isoformat(),
+            "extremes": [
+                {"t": e.time.isoformat(), "v": e.value, "kind": e.kind}
+                for e in self._extremes
+            ],
+        }
+        try:
+            with open(CACHE_PATH, "w") as f:
+                json.dump(data, f)
+        except OSError as e:
+            print(f"Tide cache write failed: {e}")
 
     def _dashed_vline(self, d, x, y0, y1, color) -> None:
         y = y0
