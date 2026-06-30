@@ -12,7 +12,9 @@ STATION_LON = -122.690  # east-positive longitude
 SCALE_MIN_FT = -4.0
 SCALE_MAX_FT = 10.0
 
-WINDOW_HOURS = 24
+# "now" sits 1/4 from the left edge: a short look-back, a longer look-ahead.
+PAST_HOURS = 12
+FUTURE_HOURS = 36
 REFRESH_RATE = 900
 
 WIDTH = 600
@@ -90,8 +92,8 @@ class TidePage(BasePage):
         d = ImageDraw.Draw(image)
         self._draw_header(d, now)
 
-        window_start = now - timedelta(hours=WINDOW_HOURS)
-        window_end = now + timedelta(hours=WINDOW_HOURS)
+        window_start = now - timedelta(hours=PAST_HOURS)
+        window_end = now + timedelta(hours=FUTURE_HOURS)
 
         # Night shading (drawn first so the curve and labels render on top)
         self._draw_night_shading(d, window_start, window_end)
@@ -102,7 +104,7 @@ class TidePage(BasePage):
         if len(pts) >= 2:
             d.line(pts, fill=BLUE, width=CURVE_WIDTH, joint="curve")
 
-        # "Now" vertical line (centered) — thin red dashed accent with a small label
+        # "Now" vertical line (1/4 from the left) — thin red dashed accent with a small label
         x_now = time_to_x(now, window_start, window_end)
         self._dashed_vline(d, x_now, CHART_TOP, CHART_BOTTOM, RED)
         now_fnt = ImageFont.truetype(_FONT_PATH, NOW_LABEL_FONT_SIZE)
